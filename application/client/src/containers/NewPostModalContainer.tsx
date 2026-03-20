@@ -13,23 +13,50 @@ const NewPostModalPage = lazy(() =>
 );
 
 interface SubmitParams {
-  images: File[];
+  images: Array<{ alt: string; file: File }>;
   movie: File | undefined;
   sound: File | undefined;
   text: string;
 }
 
 async function sendNewPost({ images, movie, sound, text }: SubmitParams): Promise<Models.Post> {
+  const uploadedImages = images.length
+    ? await Promise.all(
+        images.map(async (image, index) => {
+          const uploaded = await sendFile<{ alt: string; id: string }>("/api/v1/images", image.file, {
+            "X-Image-Alt": encodeURIComponent(image.alt),
+          });
+          return uploaded;
+        }),
+      )
+    : [];
+
+  const uploadedMovie = movie
+    ? await (async () => {
+        logNewPost("movieUpload:start", { name: movie.name, size: movie.size, type: movie.type });
+        const uploaded = await sendFile<{ id: string }>("/api/v1/movies", movie);
+        logNewPost("movieUpload:success", uploaded);
+        return uploaded;
+      })()
+    : undefined;
+
+  const uploadedSound = sound
+    ? await (async () => {
+        logNewPost("soundUpload:start", { name: sound.name, size: sound.size, type: sound.type });
+        const uploaded = await sendFile<{ id: string }>("/api/v1/sounds", sound);
+        logNewPost("soundUpload:success", uploaded);
+        return uploaded;
+      })()
+    : undefined;
+
   const payload = {
-    images: images
-      ? await Promise.all(images.map((image) => sendFile("/api/v1/images", image)))
-      : [],
-    movie: movie ? await sendFile("/api/v1/movies", movie) : undefined,
-    sound: sound ? await sendFile("/api/v1/sounds", sound) : undefined,
+    images: uploadedImages,
+    movie: uploadedMovie,
+    sound: uploadedSound,
     text,
   };
 
-  return sendJSON("/api/v1/posts", payload);
+  return sendJSON<Models.Post>("/api/v1/posts", payload);
 }
 
 interface Props {

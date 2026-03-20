@@ -10,7 +10,7 @@ const IMAGE_MAX_SIZE = 1280;
 const MOVIE_EXPORT_SIZE = 512;
 
 interface SubmitParams {
-  images: File[];
+  images: Array<{ alt: string; file: File }>;
   movie: File | undefined;
   sound: File | undefined;
   text: string;
@@ -55,9 +55,13 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
         .then(({ convertImage }) =>
           Promise.all(
             files.map((file) =>
-              convertImage(file, { extension: "JPG", maxSize: IMAGE_MAX_SIZE }).then(
-                (blob) => new File([blob], "converted.jpg", { type: "image/jpeg" }),
-              ),
+              convertImage(file, { extension: "JPG", maxSize: IMAGE_MAX_SIZE }).then((blob) => {
+                const convertedFile = new File([blob.blob], "converted.jpg", { type: "image/jpeg" });
+                return {
+                  alt: blob.alt,
+                  file: convertedFile,
+                };
+              }),
             ),
           ),
         )
