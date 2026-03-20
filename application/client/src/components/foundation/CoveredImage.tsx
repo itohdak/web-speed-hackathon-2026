@@ -6,13 +6,23 @@ import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Mod
 interface Props {
   alt: string;
   prioritize?: boolean;
+  sizes?: string;
   src: string;
+  srcSet?: string;
+  webpSrcSet?: string;
 }
 
 /**
  * アスペクト比を維持したまま、要素のコンテンツボックス全体を埋めるように画像を拡大縮小します
  */
-export const CoveredImage = ({ alt, prioritize = false, src }: Props) => {
+export const CoveredImage = ({
+  alt,
+  prioritize = false,
+  sizes,
+  src,
+  srcSet,
+  webpSrcSet,
+}: Props) => {
   const dialogId = useId();
   // ダイアログの背景をクリックしたときに投稿詳細ページに遷移しないようにする
   const handleDialogClick = useCallback((ev: MouseEvent<HTMLDialogElement>) => {
@@ -21,14 +31,19 @@ export const CoveredImage = ({ alt, prioritize = false, src }: Props) => {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <img
-        alt={alt}
-        className="absolute inset-0 h-full w-full object-cover"
-        decoding="async"
-        fetchPriority={prioritize ? "high" : "auto"}
-        loading={prioritize ? "eager" : "lazy"}
-        src={src}
-      />
+      <picture className="absolute inset-0 block h-full w-full">
+        {webpSrcSet ? <source sizes={sizes} srcSet={webpSrcSet} type="image/webp" /> : null}
+        <img
+          alt={alt}
+          className="absolute inset-0 h-full w-full object-cover"
+          decoding="async"
+          fetchPriority={prioritize ? "high" : "auto"}
+          loading={prioritize ? "eager" : "lazy"}
+          sizes={sizes}
+          src={src}
+          srcSet={srcSet}
+        />
+      </picture>
 
       <button
         className="border-cax-border bg-cax-surface-raised/90 text-cax-text-muted hover:bg-cax-surface absolute right-1 bottom-1 rounded-full border px-2 py-1 text-center text-xs"

@@ -3,7 +3,7 @@ import moment from "moment";
 import { ReactEventHandler, useCallback, useState } from "react";
 
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
-import { getProfileImagePath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
+import { ProfileAvatar } from "@web-speed-hackathon-2026/client/src/components/foundation/ProfileAvatar";
 
 interface Props {
   user: Models.User;
@@ -27,11 +27,11 @@ export const UserProfileHeader = ({ user }: Props) => {
         className={`h-32 ${averageColor ? `bg-[${averageColor}]` : "bg-cax-surface-subtle"}`}
       ></div>
       <div className="border-cax-border bg-cax-surface-subtle absolute left-2/4 m-0 h-28 w-28 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border sm:h-32 sm:w-32">
-        <img
+        <ProfileAvatar
           alt=""
           crossOrigin="anonymous"
+          imageId={user.profileImage.id}
           onLoad={handleLoadImage}
-          src={getProfileImagePath(user.profileImage.id)}
         />
       </div>
       <div className="px-4 pt-20">

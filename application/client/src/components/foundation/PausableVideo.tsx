@@ -5,12 +5,14 @@ import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
 
 interface Props {
+  prioritize?: boolean;
   src: string;
 }
 
-export const PausableVideo = ({ src }: Props) => {
+export const PausableVideo = ({ prioritize = false, src }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const priorityProps = prioritize ? ({ fetchpriority: "high" } as Record<string, string>) : {};
 
   const handleClick = useCallback(() => {
     const video = videoRef.current;
@@ -42,8 +44,10 @@ export const PausableVideo = ({ src }: Props) => {
           className="h-full w-full object-cover"
           loop
           muted
+          preload={prioritize ? "auto" : "metadata"}
           playsInline
           src={src}
+          {...priorityProps}
         />
         <div
           className={classNames(

@@ -32,7 +32,7 @@ export const MovieArea = ({ movie, prioritize = false, variant = "interactive" }
           />
         </AspectRatioBox>
       ) : (
-        isVideo ? <PausableVideo src={src} /> : <PausableMovie src={src} />
+        isVideo ? <PausableVideo prioritize={prioritize} src={src} /> : <PausableMovie src={src} />
       )}
     </div>
   );
