@@ -37,6 +37,7 @@ const SearchInput = ({
     <div className="flex flex-1 flex-col">
       <input
         {...input}
+        aria-label="検索 (例: キーワード since:2025-01-01 until:2025-12-31)"
         className={`flex-1 rounded border px-4 py-2 focus:outline-none ${
           errorMessage
             ? "border-cax-danger focus:border-cax-danger"
