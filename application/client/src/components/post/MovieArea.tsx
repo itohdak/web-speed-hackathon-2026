@@ -1,7 +1,10 @@
 import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/foundation/AspectRatioBox";
 import { PausableMovie } from "@web-speed-hackathon-2026/client/src/components/foundation/PausableMovie";
 import { PausableVideo } from "@web-speed-hackathon-2026/client/src/components/foundation/PausableVideo";
-import { getMoviePath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
+import {
+  getMoviePath,
+  getMoviePosterPath,
+} from "@web-speed-hackathon-2026/client/src/utils/get_path";
 
 interface Props {
   movie: Models.Movie;
@@ -12,6 +15,7 @@ interface Props {
 export const MovieArea = ({ movie, prioritize = false, variant = "interactive" }: Props) => {
   const extension = movie.extension ?? "gif";
   const src = getMoviePath(movie.id, extension);
+  const posterSrc = getMoviePosterPath(movie.id);
   const isVideo = extension === "mp4" || extension === "webm";
   const isInteractive = variant === "interactive";
 
@@ -32,7 +36,11 @@ export const MovieArea = ({ movie, prioritize = false, variant = "interactive" }
           />
         </AspectRatioBox>
       ) : (
-        isVideo ? <PausableVideo prioritize={prioritize} src={src} /> : <PausableMovie src={src} />
+        isVideo ? (
+          <PausableVideo poster={posterSrc} prioritize={prioritize} src={src} />
+        ) : (
+          <PausableMovie src={src} />
+        )
       )}
     </div>
   );

@@ -19,6 +19,10 @@ export function getMoviePath(movieId: string, extension = "gif"): string {
   return `/movies/${movieId}.${extension}`;
 }
 
+export function getMoviePosterPath(movieId: string): string {
+  return `/movies/${movieId}.jpg`;
+}
+
 export function getSoundPath(soundId: string): string {
   return `/sounds/${soundId}.mp3`;
 }
