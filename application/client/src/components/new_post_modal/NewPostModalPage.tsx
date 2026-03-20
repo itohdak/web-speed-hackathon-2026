@@ -6,6 +6,7 @@ import { ModalSubmitButton } from "@web-speed-hackathon-2026/client/src/componen
 import { AttachFileInputButton } from "@web-speed-hackathon-2026/client/src/components/new_post_modal/AttachFileInputButton";
 
 const MAX_UPLOAD_BYTES_LIMIT = 10 * 1024 * 1024;
+const MOVIE_EXPORT_SIZE = 512;
 
 interface SubmitParams {
   images: File[];
@@ -105,7 +106,7 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
       setIsConverting(true);
 
       import("@web-speed-hackathon-2026/client/src/utils/convert_movie")
-        .then(({ convertMovie }) => convertMovie(file, { extension: "gif", size: undefined }))
+        .then(({ convertMovie }) => convertMovie(file, { extension: "gif", size: MOVIE_EXPORT_SIZE }))
         .then((converted) => {
           setParams((params) => ({
             ...params,
