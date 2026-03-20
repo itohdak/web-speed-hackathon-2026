@@ -221,6 +221,10 @@ application/upload/**
 
 # Local SQLite database is regenerated from seeds
 application/server/database.sqlite
+application/dist/**/*.br
+application/dist/**/*.gz
+application/public/**/*.br
+application/public/**/*.gz
 !application/upload/**/
 !application/upload/**/.gitkeep
 results

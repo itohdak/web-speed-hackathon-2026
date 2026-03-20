@@ -8,6 +8,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "tsx src/index.ts",
+    "compress:assets": "node --import tsx ./scripts/compressStaticAssets.ts",
     "typecheck": "tsc --noEmit",
     "seed:generate": "tsx ./scripts/generateSeeds.ts",
     "seed:insert": "tsx ./scripts/insertSeeds.ts"
