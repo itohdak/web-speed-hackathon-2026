@@ -108,10 +108,6 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
   }, [suggestions, showSuggestions]);
 
   useEffect(() => {
-    if (tokenizer !== null || isTokenizerLoading || !inputValue.trim()) {
-      return;
-    }
-
     let mounted = true;
     setIsTokenizerLoading(true);
 
@@ -120,6 +116,9 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
         if (mounted) {
           setTokenizer(nextTokenizer);
         }
+      })
+      .catch((error: unknown) => {
+        console.error(error);
       })
       .finally(() => {
         if (mounted) {
@@ -130,7 +129,7 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
     return () => {
       mounted = false;
     };
-  }, [inputValue, isTokenizerLoading, tokenizer]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
