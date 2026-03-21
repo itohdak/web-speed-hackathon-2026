@@ -9,6 +9,7 @@ interface Props {
   authModalId: string;
   newPostModalId: string;
   onLogout: () => void;
+  onPreloadCrok?: () => void;
 }
 
 export const Navigation = ({
@@ -16,6 +17,7 @@ export const Navigation = ({
   authModalId,
   newPostModalId,
   onLogout,
+  onPreloadCrok,
 }: Props) => {
   return (
     <nav className="app-nav border-cax-border bg-cax-surface fixed right-0 bottom-0 left-0 z-10 h-12 border-t lg:relative lg:h-full lg:w-48 lg:border-t-0">
@@ -66,6 +68,7 @@ export const Navigation = ({
             <NavigationItem
               href="/crok"
               icon={<CrokLogo className="h-[30px] w-[30px]" />}
+              onIntent={onPreloadCrok}
               text="Crok"
             />
           ) : null}

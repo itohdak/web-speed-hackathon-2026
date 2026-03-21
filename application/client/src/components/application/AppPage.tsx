@@ -8,6 +8,7 @@ interface Props {
   authModalId: string;
   newPostModalId: string;
   onLogout: () => void;
+  onPreloadCrok?: () => void;
 }
 
 export const AppPage = ({
@@ -16,6 +17,7 @@ export const AppPage = ({
   authModalId,
   newPostModalId,
   onLogout,
+  onPreloadCrok,
 }: Props) => {
   return (
     <div className="app-shell relative z-0 flex justify-center font-sans">
@@ -26,6 +28,7 @@ export const AppPage = ({
             authModalId={authModalId}
             newPostModalId={newPostModalId}
             onLogout={onLogout}
+            onPreloadCrok={onPreloadCrok}
           />
         </aside>
         <main className="app-main relative z-0 w-screen max-w-screen-sm min-w-0 shrink pb-12 lg:pb-0">

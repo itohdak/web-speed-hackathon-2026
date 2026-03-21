@@ -46,8 +46,11 @@ const TermContainer = lazy(() =>
     default: module.TermContainer,
   })),
 );
+const loadCrokContainer = () =>
+  import("@web-speed-hackathon-2026/client/src/containers/CrokContainer");
+
 const CrokContainer = lazy(() =>
-  import("@web-speed-hackathon-2026/client/src/containers/CrokContainer").then((module) => ({
+  loadCrokContainer().then((module) => ({
     default: module.CrokContainer,
   })),
 );
@@ -109,6 +112,40 @@ export const AppContainer = () => {
     navigate("/");
   }, [navigate]);
 
+  const preloadCrok = useCallback(() => {
+    void loadCrokContainer().then((module) => {
+      module.preloadCrokResources();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (activeUser == null) {
+      return;
+    }
+
+    const idleCallbackId =
+      "requestIdleCallback" in window
+        ? window.requestIdleCallback(() => {
+            preloadCrok();
+          })
+        : null;
+    const timeoutId =
+      idleCallbackId == null
+        ? window.setTimeout(() => {
+            preloadCrok();
+          }, 0)
+        : null;
+
+    return () => {
+      if (idleCallbackId != null) {
+        window.cancelIdleCallback(idleCallbackId);
+      }
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [activeUser, preloadCrok]);
+
   const authModalId = useId();
   const newPostModalId = useId();
   const routeFallback = <div className="p-4">読込中...</div>;
@@ -120,6 +157,7 @@ export const AppContainer = () => {
         authModalId={authModalId}
         newPostModalId={newPostModalId}
         onLogout={handleLogout}
+        onPreloadCrok={preloadCrok}
       >
         <Suspense fallback={routeFallback}>
           <Routes>

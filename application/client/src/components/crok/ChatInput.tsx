@@ -23,20 +23,35 @@ interface Props {
 
 let cachedSuggestions: string[] | null = null;
 let suggestionsRequest: Promise<string[]> | null = null;
+let cachedTokenizer: Tokenizer<IpadicFeatures> | null = null;
+let tokenizerRequest: Promise<Tokenizer<IpadicFeatures>> | null = null;
 
 async function buildTokenizer(): Promise<Tokenizer<IpadicFeatures>> {
+  if (cachedTokenizer != null) {
+    return cachedTokenizer;
+  }
+
+  if (tokenizerRequest != null) {
+    return tokenizerRequest;
+  }
+
   const kuromoji = await import("kuromoji");
 
-  return new Promise((resolve, reject) => {
+  tokenizerRequest = new Promise((resolve, reject) => {
     kuromoji.default.builder({ dicPath: "/dicts" }).build((error, nextTokenizer) => {
       if (error != null || nextTokenizer == null) {
+        tokenizerRequest = null;
         reject(error ?? new Error("Tokenizer initialization failed"));
         return;
       }
 
+      cachedTokenizer = nextTokenizer;
+      tokenizerRequest = null;
       resolve(nextTokenizer);
     });
   });
+
+  return tokenizerRequest;
 }
 
 async function getSuggestions(): Promise<string[]> {
@@ -309,3 +324,8 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
     </div>
   );
 };
+
+export function warmCrokInputResources() {
+  void buildTokenizer().catch(() => {});
+  void getSuggestions().catch(() => {});
+}
