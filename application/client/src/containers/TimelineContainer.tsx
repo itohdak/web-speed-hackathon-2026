@@ -19,7 +19,7 @@ export const TimelineContainer = () => {
   const preloadPosterHref = firstPost?.movie?.id ? getMoviePosterPath(firstPost.movie.id) : null;
 
   return (
-    <InfiniteScroll fetchMore={fetchMore} items={posts}>
+    <InfiniteScroll fetchMore={fetchMore} items={posts} runInitialCheck={false}>
       <Helmet>
         <title>タイムライン - CaX</title>
         {preloadImageHref ? <link rel="preload" as="image" href={preloadImageHref} /> : null}

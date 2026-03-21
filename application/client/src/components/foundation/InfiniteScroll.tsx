@@ -4,9 +4,10 @@ interface Props {
   children: ReactNode;
   items: any[];
   fetchMore: () => void;
+  runInitialCheck?: boolean;
 }
 
-export const InfiniteScroll = ({ children, fetchMore, items }: Props) => {
+export const InfiniteScroll = ({ children, fetchMore, items, runInitialCheck = true }: Props) => {
   const latestItem = items[items.length - 1];
 
   const prevReachedRef = useRef(false);
@@ -26,9 +27,11 @@ export const InfiniteScroll = ({ children, fetchMore, items }: Props) => {
       prevReachedRef.current = hasReached;
     };
 
-    // 最初は実行されないので手動で呼び出す
     prevReachedRef.current = false;
-    handler();
+    if (runInitialCheck) {
+      // 最初は実行されないので手動で呼び出す
+      handler();
+    }
 
     document.addEventListener("wheel", handler, { passive: true });
     document.addEventListener("touchmove", handler, { passive: true });
@@ -40,7 +43,7 @@ export const InfiniteScroll = ({ children, fetchMore, items }: Props) => {
       window.removeEventListener("resize", handler);
       document.removeEventListener("scroll", handler);
     };
-  }, [latestItem, fetchMore]);
+  }, [latestItem, fetchMore, runInitialCheck]);
 
   return <>{children}</>;
 };
