@@ -4,14 +4,14 @@ interface Props {
   headline: string;
   description?: string;
   buttonLabel?: string;
-  onOpenAuthModal: () => void;
+  authModalId: string;
 }
 
 export const CrokGate = ({
   headline,
   description = "サインインするとCrok機能をご利用いただけます。",
   buttonLabel = "サインイン",
-  onOpenAuthModal,
+  authModalId,
 }: Props) => {
   return (
     <>
@@ -24,7 +24,8 @@ export const CrokGate = ({
         <button
           className="bg-cax-brand text-cax-surface-raised hover:bg-cax-brand-strong inline-flex items-center justify-center rounded-full px-6 py-2 shadow"
           type="button"
-          onClick={onOpenAuthModal}
+          command="show-modal"
+          commandfor={authModalId}
         >
           {buttonLabel}
         </button>

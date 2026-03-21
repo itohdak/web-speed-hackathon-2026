@@ -7,17 +7,17 @@ import { NewDirectMessageModalContainer } from "@web-speed-hackathon-2026/client
 
 interface Props {
   activeUser: Models.User | null;
-  onOpenAuthModal: () => void;
+  authModalId: string;
 }
 
-export const DirectMessageListContainer = ({ activeUser, onOpenAuthModal }: Props) => {
+export const DirectMessageListContainer = ({ activeUser, authModalId }: Props) => {
   const newDmModalId = useId();
 
   if (activeUser === null) {
     return (
       <DirectMessageGate
         headline="DMを利用するにはサインインが必要です"
-        onOpenAuthModal={onOpenAuthModal}
+        authModalId={authModalId}
       />
     );
   }

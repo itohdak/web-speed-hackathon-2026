@@ -17,7 +17,6 @@ const AuthModalPage = lazy(() =>
 interface Props {
   id: string;
   onUpdateActiveUser: (user: Models.User) => void;
-  onAfterClose?: () => void;
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -65,29 +64,22 @@ function getErrorCode(err: unknown, type: "signin" | "signup"): string {
   return ERROR_MESSAGES[code];
 }
 
-export const AuthModalContainer = ({ id, onAfterClose, onUpdateActiveUser }: Props) => {
+export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
   const ref = useRef<HTMLDialogElement>(null);
   const [resetKey, setResetKey] = useState(0);
   useEffect(() => {
     if (!ref.current) return;
     const element = ref.current;
 
-    if (!element.open) {
-      element.showModal();
-    }
-
     const handleToggle = () => {
       // モーダル開閉時にkeyを更新することでフォームの状態をリセットする
       setResetKey((key) => key + 1);
-      if (!element.open) {
-        onAfterClose?.();
-      }
     };
     element.addEventListener("toggle", handleToggle);
     return () => {
       element.removeEventListener("toggle", handleToggle);
     };
-  }, [onAfterClose, ref, setResetKey]);
+  }, [ref, setResetKey]);
 
   const handleRequestCloseModal = useCallback(() => {
     ref.current?.close();

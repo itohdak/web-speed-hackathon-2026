@@ -5,17 +5,17 @@ import { Navigation } from "@web-speed-hackathon-2026/client/src/components/appl
 interface Props {
   activeUser: Models.User | null;
   children: ReactNode;
-  onOpenAuthModal: () => void;
-  onOpenNewPostModal: () => void;
+  authModalId: string;
+  newPostModalId: string;
   onLogout: () => void;
 }
 
 export const AppPage = ({
   activeUser,
   children,
+  authModalId,
+  newPostModalId,
   onLogout,
-  onOpenAuthModal,
-  onOpenNewPostModal,
 }: Props) => {
   return (
     <div className="app-shell relative z-0 flex justify-center font-sans">
@@ -23,9 +23,9 @@ export const AppPage = ({
         <aside className="relative z-10">
           <Navigation
             activeUser={activeUser}
+            authModalId={authModalId}
+            newPostModalId={newPostModalId}
             onLogout={onLogout}
-            onOpenAuthModal={onOpenAuthModal}
-            onOpenNewPostModal={onOpenNewPostModal}
           />
         </aside>
         <main className="app-main relative z-0 w-screen max-w-screen-sm min-w-0 shrink pb-12 lg:pb-0">

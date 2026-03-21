@@ -7,10 +7,10 @@ import { useSSE } from "@web-speed-hackathon-2026/client/src/hooks/use_sse";
 
 type Props = {
   activeUser: Models.User | null;
-  onOpenAuthModal: () => void;
+  authModalId: string;
 };
 
-export const CrokContainer = ({ activeUser, onOpenAuthModal }: Props) => {
+export const CrokContainer = ({ activeUser, authModalId }: Props) => {
   const [messages, setMessages] = useState<Models.ChatMessage[]>([]);
 
   const sseOptions = useMemo(
@@ -71,7 +71,9 @@ export const CrokContainer = ({ activeUser, onOpenAuthModal }: Props) => {
   );
 
   if (!activeUser) {
-    return <CrokGate headline="Crokを利用するにはサインインしてください" onOpenAuthModal={onOpenAuthModal} />;
+    return (
+      <CrokGate headline="Crokを利用するにはサインインしてください" authModalId={authModalId} />
+    );
   }
 
   return (

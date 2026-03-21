@@ -22,7 +22,7 @@ const TYPING_INDICATOR_DURATION_MS = 10 * 1000;
 
 interface Props {
   activeUser: Models.User | null;
-  onOpenAuthModal: () => void;
+  authModalId: string;
 }
 
 function upsertConversationMessage(
@@ -49,7 +49,7 @@ function upsertConversationMessage(
   };
 }
 
-export const DirectMessageContainer = ({ activeUser, onOpenAuthModal }: Props) => {
+export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
   const { conversationId = "" } = useParams<{ conversationId: string }>();
 
   const [conversation, setConversation] = useState<Models.DirectMessageConversation | null>(null);
@@ -186,7 +186,7 @@ export const DirectMessageContainer = ({ activeUser, onOpenAuthModal }: Props) =
     return (
       <DirectMessageGate
         headline="DMを利用するにはサインインしてください"
-        onOpenAuthModal={onOpenAuthModal}
+        authModalId={authModalId}
       />
     );
   }

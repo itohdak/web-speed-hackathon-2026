@@ -6,16 +6,16 @@ import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components
 
 interface Props {
   activeUser: Models.User | null;
-  onOpenAuthModal: () => void;
-  onOpenNewPostModal: () => void;
+  authModalId: string;
+  newPostModalId: string;
   onLogout: () => void;
 }
 
 export const Navigation = ({
   activeUser,
+  authModalId,
+  newPostModalId,
   onLogout,
-  onOpenAuthModal,
-  onOpenNewPostModal,
 }: Props) => {
   return (
     <nav className="app-nav border-cax-border bg-cax-surface fixed right-0 bottom-0 left-0 z-10 h-12 border-t lg:relative lg:h-full lg:w-48 lg:border-t-0 lg:border-r">
@@ -42,7 +42,8 @@ export const Navigation = ({
           {activeUser !== null ? (
             <NavigationItem
               icon={<FontAwesomeIcon iconType="edit" styleType="solid" />}
-              onClick={onOpenNewPostModal}
+              command="show-modal"
+              commandfor={newPostModalId}
               text="投稿する"
             />
           ) : null}
@@ -57,7 +58,8 @@ export const Navigation = ({
             <NavigationItem
               icon={<FontAwesomeIcon iconType="sign-in-alt" styleType="solid" />}
               text="サインイン"
-              onClick={onOpenAuthModal}
+              command="show-modal"
+              commandfor={authModalId}
             />
           ) : null}
           {activeUser !== null ? (
