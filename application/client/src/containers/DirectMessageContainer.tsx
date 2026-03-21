@@ -19,6 +19,7 @@ interface DmTypingEvent {
 }
 
 const TYPING_INDICATOR_DURATION_MS = 10 * 1000;
+const TYPING_NOTIFY_THROTTLE_MS = 500;
 
 interface Props {
   activeUser: Models.User | null;
@@ -61,6 +62,8 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
 
   const [isPeerTyping, setIsPeerTyping] = useState(false);
   const peerTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingNotifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingNotifyAtRef = useRef(0);
 
   const loadConversation = useCallback(async () => {
     if (activeUser == null) {
@@ -150,9 +153,37 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
     [conversationId],
   );
 
-  const handleTyping = useCallback(async () => {
-    void sendJSON(`/api/v1/dm/${conversationId}/typing`, {});
+  const handleTyping = useCallback(() => {
+    const now = Date.now();
+    const elapsedMs = now - lastTypingNotifyAtRef.current;
+
+    if (elapsedMs >= TYPING_NOTIFY_THROTTLE_MS) {
+      lastTypingNotifyAtRef.current = now;
+      void sendJSON(`/api/v1/dm/${conversationId}/typing`, {});
+      return;
+    }
+
+    if (typingNotifyTimeoutRef.current != null) {
+      return;
+    }
+
+    typingNotifyTimeoutRef.current = setTimeout(() => {
+      lastTypingNotifyAtRef.current = Date.now();
+      typingNotifyTimeoutRef.current = null;
+      void sendJSON(`/api/v1/dm/${conversationId}/typing`, {});
+    }, TYPING_NOTIFY_THROTTLE_MS - elapsedMs);
   }, [conversationId]);
+
+  useEffect(() => {
+    return () => {
+      if (peerTypingTimeoutRef.current != null) {
+        clearTimeout(peerTypingTimeoutRef.current);
+      }
+      if (typingNotifyTimeoutRef.current != null) {
+        clearTimeout(typingNotifyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useWs(`/api/v1/dm/${conversationId}`, (event: DmUpdateEvent | DmTypingEvent) => {
     if (event.type === "dm:conversation:message") {
