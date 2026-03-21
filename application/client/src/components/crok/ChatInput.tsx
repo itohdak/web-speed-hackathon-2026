@@ -21,6 +21,9 @@ interface Props {
   onSendMessage: (message: string) => void;
 }
 
+let cachedSuggestions: string[] | null = null;
+let suggestionsRequest: Promise<string[]> | null = null;
+
 async function buildTokenizer(): Promise<Tokenizer<IpadicFeatures>> {
   const kuromoji = await import("kuromoji");
 
@@ -34,6 +37,25 @@ async function buildTokenizer(): Promise<Tokenizer<IpadicFeatures>> {
       resolve(nextTokenizer);
     });
   });
+}
+
+async function getSuggestions(): Promise<string[]> {
+  if (cachedSuggestions != null) {
+    return cachedSuggestions;
+  }
+
+  if (suggestionsRequest == null) {
+    suggestionsRequest = fetchJSON<{ suggestions: string[] }>("/api/v1/crok/suggestions")
+      .then(({ suggestions }) => {
+        cachedSuggestions = suggestions;
+        return suggestions;
+      })
+      .finally(() => {
+        suggestionsRequest = null;
+      });
+  }
+
+  return suggestionsRequest;
 }
 
 // トークン単位でハイライト
@@ -96,6 +118,7 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
   const [tokenizer, setTokenizer] = useState<Tokenizer<IpadicFeatures> | null>(null);
   const [isTokenizerLoading, setIsTokenizerLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [allSuggestions, setAllSuggestions] = useState<string[] | null>(cachedSuggestions);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [queryTokens, setQueryTokens] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -134,23 +157,40 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
   useEffect(() => {
     let cancelled = false;
 
+    if (allSuggestions != null) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void getSuggestions()
+      .then((candidates) => {
+        if (!cancelled) {
+          setAllSuggestions(candidates);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [allSuggestions]);
+
+  useEffect(() => {
+    let cancelled = false;
+
     const updateSuggestions = async () => {
-      if (isTokenizerLoading || tokenizer == null || !inputValue.trim()) {
+      if (isTokenizerLoading || tokenizer == null || allSuggestions == null || !inputValue.trim()) {
         setSuggestions([]);
         setQueryTokens([]);
         setShowSuggestions(false);
         return;
       }
 
-      const { suggestions: candidates } = await fetchJSON<{ suggestions: string[] }>(
-        "/api/v1/crok/suggestions",
-      );
-      if (cancelled) {
-        return;
-      }
-
       const tokens = extractTokens(tokenizer.tokenize(inputValue));
-      const results = filterSuggestionsBM25(tokenizer, candidates, tokens);
+      const results = filterSuggestionsBM25(tokenizer, allSuggestions, tokens);
 
       if (cancelled) {
         return;
@@ -161,12 +201,14 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
       setShowSuggestions(results.length > 0);
     };
 
-    void updateSuggestions();
+    void updateSuggestions().catch((error: unknown) => {
+      console.error(error);
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [inputValue, isTokenizerLoading, tokenizer]);
+  }, [allSuggestions, inputValue, isTokenizerLoading, tokenizer]);
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
