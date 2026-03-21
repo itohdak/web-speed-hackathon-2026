@@ -6,7 +6,7 @@ interface Props {
 
 export const Timeline = ({ timeline }: Props) => {
   return (
-    <section>
+    <section className="timeline-list">
       {timeline.map((post, idx) => {
         return <TimelineItem key={post.id} post={post} prioritizeMedia={idx < 2} />;
       })}

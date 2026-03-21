@@ -12,8 +12,8 @@ interface Props {
 
 export const AppPage = ({ activeUser, children, authModalId, newPostModalId, onLogout }: Props) => {
   return (
-    <div className="relative z-0 flex justify-center font-sans">
-      <div className="bg-cax-surface text-cax-text flex min-h-screen max-w-full">
+    <div className="app-shell relative z-0 flex justify-center font-sans">
+      <div className="app-frame bg-cax-surface text-cax-text flex min-h-screen max-w-full">
         <aside className="relative z-10">
           <Navigation
             activeUser={activeUser}
@@ -22,7 +22,7 @@ export const AppPage = ({ activeUser, children, authModalId, newPostModalId, onL
             onLogout={onLogout}
           />
         </aside>
-        <main className="relative z-0 w-screen max-w-screen-sm min-w-0 shrink pb-12 lg:pb-0">
+        <main className="app-main relative z-0 w-screen max-w-screen-sm min-w-0 shrink pb-12 lg:pb-0">
           {children}
         </main>
       </div>

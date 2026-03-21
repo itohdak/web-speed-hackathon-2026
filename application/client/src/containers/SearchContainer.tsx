@@ -5,6 +5,7 @@ import { InfiniteScroll } from "@web-speed-hackathon-2026/client/src/components/
 import { useInfiniteFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_infinite_fetch";
 import { useSearchParams } from "@web-speed-hackathon-2026/client/src/hooks/use_search_params";
 import { fetchJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
+import { getImagePath, getMoviePosterPath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
 
 export const SearchContainer = () => {
   const [searchParams] = useSearchParams();
@@ -14,11 +15,18 @@ export const SearchContainer = () => {
     query ? `/api/v1/search?q=${encodeURIComponent(query)}` : "",
     fetchJSON,
   );
+  const firstPost = posts[0];
+  const preloadImageHref = firstPost?.images?.[0]?.id ? getImagePath(firstPost.images[0].id) : null;
+  const preloadPosterHref = firstPost?.movie?.id ? getMoviePosterPath(firstPost.movie.id) : null;
 
   return (
     <InfiniteScroll fetchMore={fetchMore} items={posts}>
       <Helmet>
         <title>検索 - CaX</title>
+        {preloadImageHref ? <link rel="preload" as="image" href={preloadImageHref} /> : null}
+        {!preloadImageHref && preloadPosterHref ? (
+          <link rel="preload" as="image" href={preloadPosterHref} />
+        ) : null}
       </Helmet>
       <SearchPage query={query} results={posts} initialValues={{ searchText: query }} />
     </InfiniteScroll>

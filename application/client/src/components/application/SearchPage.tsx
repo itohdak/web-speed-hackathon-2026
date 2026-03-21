@@ -112,8 +112,8 @@ const SearchPageComponent = ({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-cax-surface p-4 shadow">
+    <div className="search-page flex flex-col gap-4">
+      <div className="search-page__form bg-cax-surface p-4 shadow">
         <form
           onSubmit={(event) => {
             setHasTriedSubmit(true);
