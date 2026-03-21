@@ -10,6 +10,7 @@ import {
 } from "@web-speed-hackathon-2026/server/src/models";
 
 export const directMessageRouter = Router();
+const DM_MESSAGE_PAGE_SIZE = 50;
 
 interface UnreadRow {
   conversationId: string;
@@ -137,17 +138,76 @@ directMessageRouter.get("/dm/:conversationId", async (req, res) => {
     throw new httpErrors.Unauthorized();
   }
 
-  const conversation = await DirectMessageConversation.findOne({
+  const conversation = await DirectMessageConversation.unscoped().findOne({
     where: {
       id: req.params.conversationId,
       [Op.or]: [{ initiatorId: req.session.userId }, { memberId: req.session.userId }],
     },
+    include: [
+      { association: "initiator", include: [{ association: "profileImage" }] },
+      { association: "member", include: [{ association: "profileImage" }] },
+    ],
   });
   if (conversation === null) {
     throw new httpErrors.NotFound();
   }
 
-  return res.status(200).type("application/json").send(conversation);
+  const before = typeof req.query["before"] === "string" ? req.query["before"] : null;
+  const messageWhere =
+    before != null
+      ? {
+          conversationId: conversation.id,
+          createdAt: { [Op.lt]: before },
+        }
+      : {
+          conversationId: conversation.id,
+        };
+
+  const messages = await DirectMessage.unscoped().findAll({
+    include: [
+      {
+        association: "sender",
+        include: [{ association: "profileImage" }],
+      },
+    ],
+    where: messageWhere,
+    order: [
+      ["createdAt", "DESC"],
+      ["id", "DESC"],
+    ],
+    limit: DM_MESSAGE_PAGE_SIZE,
+  });
+
+  const orderedMessages = messages.slice().reverse();
+  const oldestLoaded = orderedMessages[0];
+  const hasOlderMessages =
+    oldestLoaded != null
+      ? (await DirectMessage.count({
+          where: {
+            conversationId: conversation.id,
+            createdAt: { [Op.lt]: oldestLoaded.createdAt },
+          },
+          limit: 1,
+        })) > 0
+      : false;
+
+  console.info("[api/dm/detail] fetch", {
+    before,
+    conversationId: conversation.id,
+    hasOlderMessages,
+    messageCount: orderedMessages.length,
+    newestMessageCreatedAt: orderedMessages[orderedMessages.length - 1]?.createdAt ?? null,
+    newestMessageId: orderedMessages[orderedMessages.length - 1]?.id ?? null,
+    oldestMessageCreatedAt: orderedMessages[0]?.createdAt ?? null,
+    oldestMessageId: orderedMessages[0]?.id ?? null,
+    userId: req.session.userId,
+  });
+
+  return res.status(200).type("application/json").send({
+    ...conversation.toJSON(),
+    hasOlderMessages,
+    messages: orderedMessages,
+  });
 });
 
 directMessageRouter.ws("/dm/:conversationId", async (req, _res) => {
@@ -213,6 +273,14 @@ directMessageRouter.post("/dm/:conversationId/messages", async (req, res) => {
     senderId: req.session.userId,
   });
   await message.reload();
+
+  console.info("[api/dm/messages] created", {
+    bodyLength: message.body.length,
+    conversationId: conversation.id,
+    createdAt: message.createdAt,
+    messageId: message.id,
+    senderId: req.session.userId,
+  });
 
   return res.status(201).type("application/json").send(message);
 });

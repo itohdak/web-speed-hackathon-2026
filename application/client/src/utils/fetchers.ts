@@ -15,8 +15,9 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer> {
   return (await ensureOk(response)).arrayBuffer();
 }
 
-export async function fetchJSON<T>(url: string): Promise<T> {
+export async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
+    ...init,
     credentials: "same-origin",
     method: "GET",
   });
