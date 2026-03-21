@@ -13,6 +13,48 @@ interface Props {
   newDmModalId: string;
 }
 
+interface DmListMessageEvent {
+  type: "dm:list:update";
+  payload: {
+    conversationId: string;
+    hasUnread?: boolean;
+    message?: Models.DirectMessage;
+  };
+}
+
+function applyConversationUpdate(
+  conversations: Array<Models.DirectMessageConversation>,
+  event: DmListMessageEvent,
+): Array<Models.DirectMessageConversation> {
+  const conversationIndex = conversations.findIndex(
+    (conversation) => conversation.id === event.payload.conversationId,
+  );
+  if (conversationIndex < 0) {
+    return conversations;
+  }
+
+  const conversation = conversations[conversationIndex];
+  const updatedConversation: Models.DirectMessageConversation = {
+    ...conversation,
+    hasUnread: event.payload.hasUnread ?? conversation.hasUnread,
+    messages:
+      event.payload.message == null
+        ? conversation.messages
+        : [event.payload.message],
+  };
+
+  if (event.payload.message == null) {
+    return conversations.map((current, index) =>
+      index === conversationIndex ? updatedConversation : current,
+    );
+  }
+
+  return [
+    updatedConversation,
+    ...conversations.filter((current) => current.id !== updatedConversation.id),
+  ];
+}
+
 export const DirectMessageListPage = ({ activeUser, newDmModalId }: Props) => {
   const [conversations, setConversations] =
     useState<Array<Models.DirectMessageConversation> | null>(null);
@@ -24,7 +66,9 @@ export const DirectMessageListPage = ({ activeUser, newDmModalId }: Props) => {
     }
 
     try {
-      const conversations = await fetchJSON<Array<Models.DirectMessageConversation>>("/api/v1/dm");
+      const conversations = await fetchJSON<Array<Models.DirectMessageConversation>>("/api/v1/dm", {
+        cache: "no-store",
+      });
       setConversations(conversations);
       setError(null);
     } catch (error) {
@@ -37,8 +81,14 @@ export const DirectMessageListPage = ({ activeUser, newDmModalId }: Props) => {
     void loadConversations();
   }, [loadConversations]);
 
-  useWs("/api/v1/dm/unread", () => {
-    void loadConversations();
+  useWs("/api/v1/dm/list", (event: DmListMessageEvent) => {
+    setConversations((current) => {
+      if (current == null) {
+        return current;
+      }
+
+      return applyConversationUpdate(current, event);
+    });
   });
 
   if (conversations == null) {

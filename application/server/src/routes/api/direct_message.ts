@@ -22,6 +22,9 @@ directMessageRouter.get("/dm", async (req, res) => {
     throw new httpErrors.Unauthorized();
   }
 
+  const debugConversationId =
+    typeof req.query["debugConversationId"] === "string" ? req.query["debugConversationId"] : null;
+
   const conversations = await DirectMessageConversation.unscoped().findAll({
     where: {
       [Op.or]: [{ initiatorId: req.session.userId }, { memberId: req.session.userId }],
@@ -29,17 +32,54 @@ directMessageRouter.get("/dm", async (req, res) => {
     include: [
       { association: "initiator", include: [{ association: "profileImage" }] },
       { association: "member", include: [{ association: "profileImage" }] },
-      {
-        association: "messages",
-        include: [{ association: "sender", include: [{ association: "profileImage" }] }],
-        limit: 1,
-        order: [["createdAt", "DESC"]],
-        required: false,
-        separate: true,
-      },
     ],
   });
   const conversationIds = conversations.map((conversation) => conversation.id);
+  const latestMessages = await Promise.all(
+    conversations.map(async (conversation) => {
+      const latestMessage = await DirectMessage.unscoped().findOne({
+        include: [{ association: "sender", include: [{ association: "profileImage" }] }],
+        order: [
+          ["createdAt", "DESC"],
+          ["id", "DESC"],
+        ],
+        where: {
+          conversationId: conversation.id,
+        },
+      });
+
+      return [conversation.id, latestMessage] as const;
+    }),
+  );
+  const latestMessageByConversationId = new Map(latestMessages);
+
+  if (debugConversationId != null) {
+    const debugMessages = await DirectMessage.unscoped().findAll({
+      attributes: ["id", "createdAt", "conversationId", "senderId"],
+      order: [
+        ["createdAt", "ASC"],
+        ["id", "ASC"],
+      ],
+      raw: true,
+      where: {
+        conversationId: debugConversationId,
+      },
+    });
+    const latestMessage = latestMessageByConversationId.get(debugConversationId) ?? null;
+
+    console.info("[api/dm/list] debugConversation", {
+      conversationId: debugConversationId,
+      latestMessageCreatedAt: latestMessage?.createdAt ?? null,
+      latestMessageId: latestMessage?.id ?? null,
+      latestMessageSenderId: latestMessage?.senderId ?? null,
+      messages: debugMessages.map((message) => ({
+        createdAt: message.createdAt,
+        id: message.id,
+        senderId: message.senderId,
+      })),
+    });
+  }
+
   const unreadRows: UnreadRow[] =
     conversationIds.length > 0
       ? ((await DirectMessage.unscoped().findAll({
@@ -58,16 +98,35 @@ directMessageRouter.get("/dm", async (req, res) => {
   );
 
   const sorted = conversations
-    .filter((conversation) => (conversation.messages?.length ?? 0) > 0)
+    .filter((conversation) => latestMessageByConversationId.get(conversation.id) != null)
     .sort((a, b) => {
-      const aCreatedAt = a.messages?.[0]?.createdAt?.toString() ?? "";
-      const bCreatedAt = b.messages?.[0]?.createdAt?.toString() ?? "";
-      return bCreatedAt.localeCompare(aCreatedAt);
+      const aCreatedAt = latestMessageByConversationId.get(a.id)?.createdAt;
+      const bCreatedAt = latestMessageByConversationId.get(b.id)?.createdAt;
+      const aTimestamp = aCreatedAt == null ? 0 : new Date(aCreatedAt).getTime();
+      const bTimestamp = bCreatedAt == null ? 0 : new Date(bCreatedAt).getTime();
+
+      if (aTimestamp !== bTimestamp) {
+        return bTimestamp - aTimestamp;
+      }
+
+      return b.id.localeCompare(a.id);
     })
     .map((conversation) => ({
       ...conversation.toJSON(),
+      messages: [latestMessageByConversationId.get(conversation.id)].filter(Boolean),
       hasUnread: unreadByConversationId.get(conversation.id) ?? false,
     }));
+
+  console.info(
+    "[api/dm/list] sorted",
+    sorted.map((conversation) => ({
+      conversationId: conversation.id,
+      hasUnread: conversation.hasUnread,
+      latestMessageCreatedAt: conversation.messages[0]?.createdAt ?? null,
+      latestMessageId: conversation.messages[0]?.id ?? null,
+      latestMessageSenderId: conversation.messages[0]?.sender?.id ?? null,
+    })),
+  );
 
   return res.status(200).type("application/json").send(sorted);
 });
@@ -131,6 +190,21 @@ directMessageRouter.ws("/dm/unread", async (req, _res) => {
   });
 
   eventhub.emit(`dm:unread/${req.session.userId}`, { unreadCount });
+});
+
+directMessageRouter.ws("/dm/list", async (req, _res) => {
+  if (req.session.userId === undefined) {
+    throw new httpErrors.Unauthorized();
+  }
+
+  const handler = (payload: unknown) => {
+    req.ws.send(JSON.stringify({ type: "dm:list:update", payload }));
+  };
+
+  eventhub.on(`dm:list/${req.session.userId}`, handler);
+  req.ws.on("close", () => {
+    eventhub.off(`dm:list/${req.session.userId}`, handler);
+  });
 });
 
 directMessageRouter.get("/dm/:conversationId", async (req, res) => {
@@ -312,6 +386,11 @@ directMessageRouter.post("/dm/:conversationId/read", async (req, res) => {
       individualHooks: true,
     },
   );
+
+  eventhub.emit(`dm:list/${req.session.userId}`, {
+    conversationId: conversation.id,
+    hasUnread: false,
+  });
 
   return res.status(200).type("application/json").send({});
 });

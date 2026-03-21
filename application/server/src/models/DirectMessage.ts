@@ -114,6 +114,16 @@ export function initDirectMessage(sequelize: Sequelize) {
     });
 
     eventhub.emit(`dm:conversation/${conversation.id}:message`, directMessage);
+    eventhub.emit(`dm:list/${directMessage.senderId}`, {
+      conversationId: conversation.id,
+      hasUnread: false,
+      message: directMessage,
+    });
+    eventhub.emit(`dm:list/${receiverId}`, {
+      conversationId: conversation.id,
+      hasUnread: true,
+      message: directMessage,
+    });
     eventhub.emit(`dm:unread/${receiverId}`, { unreadCount });
   });
 }
