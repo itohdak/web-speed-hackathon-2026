@@ -20,7 +20,7 @@ export const AppPage = ({
   return (
     <div className="app-shell relative z-0 flex justify-center font-sans">
       <div className="app-frame bg-cax-surface text-cax-text flex min-h-screen max-w-full">
-        <aside className="relative z-10">
+        <aside className="border-cax-border relative z-10 lg:border-r">
           <Navigation
             activeUser={activeUser}
             authModalId={authModalId}
