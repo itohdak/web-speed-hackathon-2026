@@ -9,6 +9,8 @@ import { store } from "@web-speed-hackathon-2026/client/src/store";
 import { fetchJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 import { getImagePath, getMoviePosterPath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
 
+const SEARCH_INITIAL_POST_LIMIT = 12;
+
 export const SearchContainer = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -16,6 +18,7 @@ export const SearchContainer = () => {
   const { data: posts, fetchMore } = useInfiniteFetch<Models.Post>(
     query ? `/api/v1/search?q=${encodeURIComponent(query)}` : "",
     fetchJSON,
+    SEARCH_INITIAL_POST_LIMIT,
   );
   const firstPost = posts[0];
   const preloadImageHref = firstPost?.images?.[0]?.id ? getImagePath(firstPost.images[0].id) : null;

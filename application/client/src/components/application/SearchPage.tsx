@@ -74,21 +74,42 @@ const SearchPageComponent = ({
     }
 
     let isMounted = true;
-    import("@web-speed-hackathon-2026/client/src/utils/negaposi_analyzer")
-      .then(({ analyzeSentiment }) => analyzeSentiment(parsed.keywords))
-      .then((result) => {
-        if (isMounted) {
-          setIsNegative(result.label === "negative");
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setIsNegative(false);
-        }
-      });
+    const execute = () => {
+      import("@web-speed-hackathon-2026/client/src/utils/negaposi_analyzer")
+        .then(({ analyzeSentiment }) => analyzeSentiment(parsed.keywords))
+        .then((result) => {
+          if (isMounted) {
+            setIsNegative(result.label === "negative");
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setIsNegative(false);
+          }
+        });
+    };
+
+    const idleCallbackId =
+      "requestIdleCallback" in window
+        ? window.requestIdleCallback(() => {
+            execute();
+          })
+        : null;
+    const timeoutId =
+      idleCallbackId == null
+        ? window.setTimeout(() => {
+            execute();
+          }, 0)
+        : null;
 
     return () => {
       isMounted = false;
+      if (idleCallbackId != null) {
+        window.cancelIdleCallback(idleCallbackId);
+      }
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId);
+      }
     };
   }, [parsed.keywords]);
 
