@@ -49,7 +49,11 @@ export const TimelineItem = ({ post, prioritizeMedia = false }: Props) => {
   );
 
   return (
-    <article className="timeline-item hover:bg-cax-surface-subtle px-1 sm:px-4" onClick={handleClick}>
+    <article
+      className="timeline-item hover:bg-cax-surface-subtle px-1 sm:px-4"
+      style={{ containIntrinsicSize: "720px", contentVisibility: "auto" }}
+      onClick={handleClick}
+    >
       <div className="timeline-item__body border-cax-border flex border-b px-2 pt-2 pb-4 sm:px-4">
         <div className="timeline-item__avatar shrink-0 grow-0 pr-2 sm:pr-4">
           <Link

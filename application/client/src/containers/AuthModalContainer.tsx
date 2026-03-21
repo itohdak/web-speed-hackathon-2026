@@ -1,14 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { SubmissionError } from "redux-form";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Provider } from "react-redux";
 
-import { AuthFormData } from "@web-speed-hackathon-2026/client/src/auth/types";
-import { AuthModalPage } from "@web-speed-hackathon-2026/client/src/components/auth_modal/AuthModalPage";
+import type { AuthFormData } from "@web-speed-hackathon-2026/client/src/auth/types";
 import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Modal";
+import { store } from "@web-speed-hackathon-2026/client/src/store";
 import { sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
+
+const AuthModalPage = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/components/auth_modal/AuthModalPage").then(
+    (module) => ({
+      default: module.AuthModalPage,
+    }),
+  ),
+);
 
 interface Props {
   id: string;
   onUpdateActiveUser: (user: Models.User) => void;
+  onAfterClose?: () => void;
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -56,22 +65,29 @@ function getErrorCode(err: unknown, type: "signin" | "signup"): string {
   return ERROR_MESSAGES[code];
 }
 
-export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
+export const AuthModalContainer = ({ id, onAfterClose, onUpdateActiveUser }: Props) => {
   const ref = useRef<HTMLDialogElement>(null);
   const [resetKey, setResetKey] = useState(0);
   useEffect(() => {
     if (!ref.current) return;
     const element = ref.current;
 
+    if (!element.open) {
+      element.showModal();
+    }
+
     const handleToggle = () => {
       // モーダル開閉時にkeyを更新することでフォームの状態をリセットする
       setResetKey((key) => key + 1);
+      if (!element.open) {
+        onAfterClose?.();
+      }
     };
     element.addEventListener("toggle", handleToggle);
     return () => {
       element.removeEventListener("toggle", handleToggle);
     };
-  }, [ref, setResetKey]);
+  }, [onAfterClose, ref, setResetKey]);
 
   const handleRequestCloseModal = useCallback(() => {
     ref.current?.close();
@@ -90,6 +106,7 @@ export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
         handleRequestCloseModal();
       } catch (err: unknown) {
         const error = getErrorCode(err, values.type);
+        const { SubmissionError } = await import("redux-form");
         throw new SubmissionError({
           _error: error,
         });
@@ -100,11 +117,15 @@ export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
 
   return (
     <Modal id={id} ref={ref} closedby="any">
-      <AuthModalPage
-        key={resetKey}
-        onRequestCloseModal={handleRequestCloseModal}
-        onSubmit={handleSubmit}
-      />
+      <Provider store={store}>
+        <Suspense fallback={<div className="p-4 text-center">読込中...</div>}>
+          <AuthModalPage
+            key={resetKey}
+            onRequestCloseModal={handleRequestCloseModal}
+            onSubmit={handleSubmit}
+          />
+        </Suspense>
+      </Provider>
     </Modal>
   );
 };

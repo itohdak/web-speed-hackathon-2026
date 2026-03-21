@@ -147,7 +147,7 @@ const config = {
       }),
     ],
     splitChunks: {
-      chunks: "async",
+      chunks: "all",
     },
   },
   cache: false,

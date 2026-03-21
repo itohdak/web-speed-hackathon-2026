@@ -86,9 +86,10 @@ async function sendNewPost({ images, movie, sound, text }: SubmitParams): Promis
 
 interface Props {
   id: string;
+  onAfterClose?: () => void;
 }
 
-export const NewPostModalContainer = ({ id }: Props) => {
+export const NewPostModalContainer = ({ id, onAfterClose }: Props) => {
   const dialogId = useId();
   const ref = useRef<HTMLDialogElement>(null);
   const [resetKey, setResetKey] = useState(0);
@@ -98,15 +99,22 @@ export const NewPostModalContainer = ({ id }: Props) => {
       return;
     }
 
+    if (!element.open) {
+      element.showModal();
+    }
+
     const handleToggle = () => {
       // モーダル開閉時にkeyを更新することでフォームの状態をリセットする
       setResetKey((key) => key + 1);
+      if (!element.open) {
+        onAfterClose?.();
+      }
     };
     element.addEventListener("toggle", handleToggle);
     return () => {
       element.removeEventListener("toggle", handleToggle);
     };
-  }, []);
+  }, [onAfterClose]);
 
   const navigate = useNavigate();
 
