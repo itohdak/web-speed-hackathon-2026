@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/foundation/AspectRatioBox";
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
@@ -12,8 +12,30 @@ interface Props {
 
 export const PausableVideo = ({ poster, prioritize = false, src }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const priorityProps = prioritize ? ({ fetchpriority: "high" } as Record<string, string>) : {};
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video == null) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      void video
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          setIsPlaying(false);
+        });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [src]);
 
   const handleClick = useCallback(() => {
     const video = videoRef.current;
@@ -41,7 +63,6 @@ export const PausableVideo = ({ poster, prioritize = false, src }: Props) => {
       >
         <video
           ref={videoRef}
-          autoPlay
           className="h-full w-full object-cover"
           loop
           muted
